@@ -122,6 +122,7 @@ fn day_1_trebuchet_part_2() -> u32 {
     result.sum()
 }
 
+
 /* Day 2: Cube Conundrum
 
 You play several games and record the information from each game (your puzzle
@@ -226,11 +227,7 @@ fn repeat_to_str<T>(parser: Parser, f: fn(Parser) -> ParserResult<T>) -> ParserR
         cur_parser = parser;
     }
     let end = cur_parser.pos;
-    if end > start.pos {
-        start.with(&start.body[start.pos..end])
-    } else {
-        None
-    }
+    cur_parser.with(&start.body[start.pos..end])
 }
 
 fn parse_u32(parser: Parser) -> ParserResult<u32> {
@@ -251,11 +248,12 @@ fn parse_list<'a, T>(
         nums.push(num);
         cur_parser = parser;
         let (parser, _) = skip_whitespace(cur_parser)?;
-        if exact(parser, sep).is_none() {
+        if let Some((parser, _)) = exact(parser, sep) {
+            let (parser, _) = skip_whitespace(parser)?;
+            cur_parser = parser;
+        } else {
             break;
         }
-        let (parser, _) = skip_whitespace(cur_parser)?;
-        cur_parser = parser;
     }
     cur_parser.with(nums)
 }
@@ -272,12 +270,14 @@ fn consume<T>(parser_result: ParserResult<T>) -> T {
 
 // Parsers for Day 2
 
+#[derive(Debug, Clone, Copy)]
 enum Rgb {
     Red,
     Green,
     Blue,
 }
 
+#[derive(Debug, Clone, Copy)]
 struct ColorQty {
     color: Rgb,
     qty: u32,
@@ -339,32 +339,40 @@ fn parse_rgb(parser: Parser) -> ParserResult<Rgb> {
     }
 }
 
+struct MaxColors {
+    r: u32,
+    g: u32,
+    b: u32,
+}
+impl MaxColors {
+    fn get(&self, color: Rgb) -> u32 {
+        match color {
+            Rgb::Red => self.r,
+            Rgb::Green => self.g,
+            Rgb::Blue => self.b,
+        }
+    }
+}
+
 fn day_2_cube_conundrum() -> u32 {
-    let body = DAY_1_INPUT_A;
-    let max_r = 12;
-    let max_g = 13;
-    let max_b = 14;
+    let body = DAY_2_INPUT_A;
+    let max_colors = MaxColors {
+        r: 12,
+        g: 13,
+        b: 14,
+    };
 
     let games = consume(parse_games(Parser { body, pos: 0 }));
 
     let process_game = |game: &Game| {
-        let mut r = 0;
-        let mut g = 0;
-        let mut b = 0;
         for set in &game.sets {
             for color_qty in set {
-                match color_qty.color {
-                    Rgb::Red => r += color_qty.qty,
-                    Rgb::Green => g += color_qty.qty,
-                    Rgb::Blue => b += color_qty.qty,
+                if color_qty.qty > max_colors.get(color_qty.color) {
+                    return None;
                 }
             }
         }
-        if r <= max_r && g <= max_g && b <= max_b {
-            Some(game.id)
-        } else {
-            None
-        }
+        Some(game.id)
     };
 
     games.iter().filter_map(process_game).sum()
