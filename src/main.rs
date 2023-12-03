@@ -12,7 +12,7 @@ fn run_bin(name: &str) {
 }
 
 fn main() {
-    let bins = ["day_1_a", "day_1_b", "day_2_a", "day_2_b"];
+    let bins = ["day_1_a", "day_1_b", "day_2_a", "day_2_b", "day_3_a"];
     for bin in &bins {
         println!("Running {}", bin);
         run_bin(bin);
